@@ -15,10 +15,10 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   // checking if user already exits : username,email
-  const existedUser = User.findOne({
+  const existedUser = await User.findOne({
     $or: [{ userName }, { email }],
   });
-  console.log("existedUser", existedUser);
+
   if (existedUser) {
     throw new ApiError(409, "User with email or username already exits");
   }
@@ -26,19 +26,24 @@ const registerUser = asyncHandler(async (req, res) => {
   // checking if for images, check for avatar
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverLocalPath = req.files?.coverImage[0]?.path;
+  // const coverLocalPath = req.files?.coverImage[0]?.path;
 
-  console.log(
-    "avatarLocalPath & coverLocalPath ",
-    avatarLocalPath,
-    coverLocalPath
-  );
+  let coverLocalPath;
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverLocalPath = req.files.coverImage[0].path;
+  }
+
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avtar file is required");
   }
   // uploading  them to cloudinary
   const avatar = await uploadOnCloudinary(avatarLocalPath);
   const coverImage = await uploadOnCloudinary(coverLocalPath);
+
   if (!avatar) {
     throw new ApiError(400, "Avtar file is required");
   }
